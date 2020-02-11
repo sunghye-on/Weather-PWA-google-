@@ -42,3 +42,29 @@ https://github.com/googlecodelabs/your-first-pwapp/archive/master.zip
 3. 패키지 파일들의 설치를 위해 npm i 커맨드 입력
 4. 시작을 위한 스크립트 npm start 입력
 5. 크롬 브라우져로  [http://localhost:8000](http://localhost:8000/)  열기
+
+
+
+## 기준 설정 
+
+### Lighthouse(등대)
+
+**Lighthouse**는 사이트 및 페이지의 품질을 향상 시키기는데 도움이되는 도구이 사용하기 쉽다!! 또한 성능이나 접근성, 그리고 PWA에 대한 감사를 실사하여 문제해결방법을 설명하거나 부족한 부분을 알려준다.
+
+#### 실행 방법
+
+크롬 개발자도구(F12를 누르면 나옴)에서 Aduits에서 run Audits를 클릭하면 실행된다.
+
+
+
+#### 우리가 눈여겨 봐야할 오류들
+
+- Current page does not respond with a 200 when offline.
+-  `start_url` does not respond with a 200 when offline.
+-  Does not register a service worker that controls page and `start_url.`
+-  Web app manifest does not meet the installability requirements.
+-  Is not configured for a custom splash screen.
+-  Does not set an address-bar theme color.
+
+-----------------
+
