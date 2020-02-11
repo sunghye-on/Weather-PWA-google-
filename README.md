@@ -57,14 +57,123 @@ https://github.com/googlecodelabs/your-first-pwapp/archive/master.zip
 
 
 
-#### 우리가 눈여겨 봐야할 오류들
+#### 우리가 해결해나갈 오류들
 
-- Current page does not respond with a 200 when offline.
--  `start_url` does not respond with a 200 when offline.
--  Does not register a service worker that controls page and `start_url.`
--  Web app manifest does not meet the installability requirements.
--  Is not configured for a custom splash screen.
--  Does not set an address-bar theme color.
+1. Current page does not respond with a 200 when offline.
+2.  `start_url` does not respond with a 200 when offline.
+3.  Does not register a service worker that controls page and `start_url.`
+4.  Web app manifest does not meet the installability requirements.
+5.  Is not configured for a custom splash screen.
+6.  Does not set an address-bar theme color.
 
 -----------------
+
+## 웹 앱 미니페스트 만들기
+
+### 웹 앱 매니페스트란?
+
+간단한 JSON파일로 개발자가 앱의 사용자에게 표시되는 방식을 제어 할 수 있는 기능을 제공한다!
+
+
+
+### 웹 앱 매니페스트 생성
+
+우리의 프로젝트 public 폴더 안에 manifest.json을 생성합니다.
+
+그후 아래의 코드를 (입력 || 복붙) 합시다 **(!!복붙할시에는 주석 제거)**
+
+```json
+{
+  // name과 이름이 너무 길 경우 표시되는short_name
+  "name": "Weather",
+  "short_name": "Weather",
+  // 설치 및 화면에 뿌려줄 아이콘들
+  // tip: 설치가능한 PWA를 위해서는 적어도 192 X 192px 아이콘과 512 X 512px 아이콘을 포함해야한다.
+  "icons": [{
+    "src": "/images/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }, {
+      "src": "/images/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }, {
+      "src": "/images/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    }, {
+      "src": "/images/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }, {
+      "src": "/images/icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }, {
+      "src": "/images/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }],
+  //앱을 열면 시작될 시작 URL을 정의
+  "start_url": "/index.html",
+  //display의 모드를 설정할 수 있다.(3가지의 모드가 있다) 
+  //tip: 설치가능한 PWA를 위해서는 standalone혹은 fullscreen으로 설정해야한다.
+  "display": "standalone",
+  "background_color": "#3E4EB8",
+  "theme_color": "#2F3BA2"
+}
+```
+
+
+
+### 웹 앱 매니페스트 연결 및 확인 
+
+아래의 설명에 맞는 링크들를 index.html에 head에 연결시켜준다. 
+
+매니페스트 연결을 위해 아래의 링크를 연결해준다.
+
+```html
+<link rel="manifest" href="/manifest.json">
+```
+
+ 이제 매니페스트 연결을 마쳤다면
+
+개발자도구 => Application => Manifest에서 우리가 만든 매니페스트가 적용된 것을 알 수 있다.
+
+#### iOS를 위한 meta tag
+
+iOS의 사파리는 아직 웹 앱 매니페스트를 지원하지 않습니다... (슬픔) 그래서 우리는 아래와 같이 고전적인? 메타태그를 직접 달아둬야합니다
+
+```html
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Weather PWA">
+<link rel="apple-touch-icon" href="/images/icons/icon-152x152.png">
+```
+
+#### 앱의 설명 작성
+
+SEO의 Audits결과중에  Document does not have a meta description.가 있다. 이것은 설명이 없다는 이야기인데 설명은 구글 검색결과에 표시될 수 있습니다.  즉, 설명을 자세하고 잘 쓰면 사용자들이 검색하여 많은 사람들이 사용할 수 있습니다.
+
+아래와 같이 혹은 원하는 설명을 적어보겠습니다.
+
+```html
+<meta name="description" content="A sample weather app">
+```
+
+
+
+####  주소창 색상 지정
+
+PWA Audits 결과중 Does not set an address-bar theme color가 있는데 우리가 만드는 브랜드의 색상에 맞게 변경할 수 있는 기능입니다.  필수는 아니지만 권장합니다.
+
+```html
+<meta name="theme-color" content="#2F3BA2" />
+```
+
+
+
+다시 Run Audits를 실행하보면 우리는 기존 6개의 오류중 4,5,6번 오류를 해결했고 1,2,3번의 오류가 남은 것을 볼 수 있다.
+
+-----------
 
