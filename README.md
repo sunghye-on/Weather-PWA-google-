@@ -177,3 +177,145 @@ PWA Audits 결과중 Does not set an address-bar theme color가 있는데 우리
 
 -----------
 
+
+
+## 기본적인 오프라인 기능 구현
+
+이번에는 날씨앱에 대한 간단한 오프라인 페이지를 축해보도록 하겠습니다. 사용자가 오프라인 상태에서 앱을 로드하려고 하면 브라우저에 표시되는 일반적인 오프라인 페이지(공룡게임)말고 우리가 지정한 페이지가 표시되게 할 것이다. 
+
+이번 학습을 하면 우리가 위에서 봤던 1,2,3번의 오류를 해결 할 수 있습니다.
+
+다음에는 완전한 오프라인 환경으로 바꿀것이다.
+
+서비스 워커를 통해 제공되는 기능은 점진적 향상으로 간주되어야하며 브라우저가 지원하는 경우에만 추가해야합니다. 예를 들어 서비스 워커를 사용하면 네트워크가없는 경우에도 사용할 수 있도록 앱의 앱 셸과 앱의 데이터를 캐시 할 수 있습니다. 서비스 워커가 지원되지 않으면 오프라인 코드가 호출되지 않고 사용자에게 기본 경험(공룡게임)이 제공됩니다. 점진적 개선 기능을 제공하기 위해 기능 감지를 사용하면 오버 헤드가 거의 없으며 해당 기능을 지원하지 않는 이전 브라우저에서는 중단되지 않습니다.
+
+```javascript
+//tip
+/*
+*	서비스워커의 기능들은 HTTPS를 통해 액세스되는 페이지에서만 사용될 수 있습니다.
+*	(http://localhost and equivalents also work to facilitate testing.)
+```
+
+
+
+### 서비스 워커 등록
+
+서비스워커의 등록을위해 index.html의 script태그 부분에 아래 자바스크립트 코드를 삽입하여 서비스 워커를 등록해보자 
+
+```javascript
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+        .then((reg) => {
+          console.log('Service worker registered.', reg);
+        });
+  });
+}
+```
+
+ 
+
+위의 코드는 서비스워커를 지원하면 실행되는 블럭이다. 그리고 로드이벤트가 발생시 우리의 서비스워커가 존재하는 위치를 지정해줌으로 서비스워커를 등록시킨다. 그후 콘솔로 성공사실을 알린다.
+
+```javascript
+//tip
+/*	서비스워커는 자바스크립트들이 모여있는 script디렉토리에 존재하는 것이 아닌 루트 디렉토리에 존재한	다. 이게 서비스 워커의 범위(scope)를 설정하는 가장 쉬운 방법이다. 루트디렉토리에 생성하면 서비스
+	워커는 모든 웹페이지에 요청을 제어 할 수 있다. 
+*/
+```
+
+
+
+### Precache 오프라인 페이지
+
+먼저 우리가 서비스워커에게 무엇을 미리 캐시할지 말해야합니다!! 이번 프로젝트에 미리 만들어진 오프라인 페이지(offilne.html)를 인터넷 연결이 없을때 보여주도록 합시다.
+
+가장 먼저 서비스워커에 FILES_TO_CACHE에 오프라인 페이지를 넣어줍시다.
+
+```javascript
+const FILES_TO_CACHE = [
+  '/offline.html',
+];
+```
+
+다음으로 우리는 서비스워커가 설치되는 install이벤트에서 우리가 지정한 FILES_TO_CACHE파일들을 캐시에 미리 저장합니다.
+
+```javascript
+self.addEventListener("install", evt => {
+  console.log("[ServiceWorker] Install");
+  // CODELAB: Precache static resources here.
+  evt.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[ServiceWorker] Pre-caching offline page');
+      return cache.addAll(FILES_TO_CACHE);
+    })
+);
+  self.skipWaiting();
+});
+```
+
+인스톨이벤트가 발생하면 제공된 캐시이름으로 cache.open()으로 캐시를 열수있다. 이때 캐시이름은 캐시의 버전을 관리하기 쉽게 만들어진다. 또한 캐시의 버전 관리를 하면 업데이트가 간편하다.
+
+케시를 연이후에는 URL목록을 서버에서 가져와서 캐시에 response를 추가하는 cache.addAll()을 이용할 수 있다. URL을 요청하는 중에 하나라도 실패하면 전체가 실패한다. 
+
+
+
+### 개발자도구로 서비스워커 확인
+
+크롬 개발자도구를 이용하여 서비스워커를 이해하고 디버깅하는 방법을 보겠습니다. 개발자도구에 Application에 Service Workers에 들어가보면 아무것도 없거나 서비스워커가 설치된 것을 볼수 있다. 아무것도 없다면 페이지를 새로고침해보자!
+
+서비스워커에 관한 내용들이 있으면 현재 서비스워커가 작동중이라는 것이다.
+
+
+
+### 이전 캐시를 지우기
+
+우리는 activate이벤트를 사용하여 우리의 이전 캐시데이터를 지울 것이다. 이작업에서 서비스워커는  CACHE_NAME 의 번화를 확인하여 변화가 있을시(업데이트가 있을시) 이번의 데이터를 삭제한다. 아래의 코드에서 확인하자
+
+```javascript
+self.addEventListener("activate", evt => {
+  console.log("[ServiceWorker] Activate");
+  // CODELAB: Remove previous cached data from disk.
+  evt.waitUntil(
+    caches.keys().then(keyList => {
+      return Promise.all(
+        keyList.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log("[ServiceWorker] Removing old cache", key);
+            return caches.delete(key);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+```
+
+
+
+### 인터넷 연결을 실패할때 캐시를 다루는 방법
+
+마지막으로 우리는 fetch이벤트를 처리해야한다.  우리는 "Network falling back to cache" 방법을 사용할 것이며 서비스워커가 먼저 인터넷에서 fetch 리소르를 받아오고자 한다. 만약 실패하면 서비스워커가 캐시에 있던 오프라인 페이지를 가져오도록하는 방법이다.
+
+아래와 같은 코드를 fetch이벤트 핸들러에 작성해보자
+
+```javascript
+self.addEventListener("fetch", evt => {
+  console.log("[ServiceWorker] Fetch", evt.request.url);
+  // CODELAB: Add fetch event handler here.
+  if (evt.request.mode !== "navigate") {
+    // Not a page navigation, bail.
+    return;
+  }
+  evt.respondWith(
+    fetch(evt.request).catch(() => {
+      return caches.open(CACHE_NAME).then(cache => {
+        return cache.match("offline.html");
+      });
+    })
+  );
+});
+```
+
+------------------------------------------------------- 그림 아래까지 했음 내일 마무리 필수!
