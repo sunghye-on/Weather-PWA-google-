@@ -14,11 +14,17 @@
 
 ### 👉 : 전체 오프라인 기능 만들기
 
-### 👉 : 웹 앱 설치기능 만들기
+### 👉 : 설치가능한 웹 앱으로 만들기
 
 ### 👉 :  기본 PWA 완료!!!
 
 
+
+### 🙏 PWA more infomation 🙏
+
+제 깃허브에서 PWA 관련 더 많은 정보를 얻어가세요ㅎ
+
+ https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA 
 
 
 
@@ -331,3 +337,199 @@ self.addEventListener("fetch", evt => {
 
 이제 우리는 기존에 있던 1,2,3,4,5,6번의 오류를 모두 해결했습니다.!!!1 다음에는 전체 오프라인 서비스를 제공해봅시다!!
 
+
+
+
+
+## 👉전체 오프라인 기능 만들기
+
+### 서비스 워커의 생명 주기(life cycle)
+
+서비스워커의 생명 주기는 가장 복잡한 부분입니다! 하지만 작동방식을 알고나면 해당 웹의 서비스마다 적절한 패턴을 혼합시켜서 매끄러운 서비스가 가능합니다. 여기서는 서비스워커에 관한 내용들을 조금 스킵할 생각이며 자세한 사항을 공부하기 위해서 아래의 링크에 접속해 봅시다.
+
+
+
+구글 : https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle
+
+제가 만든 github PWA저장소 4장 참고 :  https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA 
+
+### app의 로직을 업데이트
+
+앱은 캐시와 네트워크에 각각 하난씩 두개의 비동기 요청을 해야한다. 앱은 창에서 사용 가능한 캐시 개체를 사용하여 캐시에 액세스하고 최신 데이터를 검색한다. 이것은 캐시 객체가 모든 브라우저에서 사용 가능하지 않을 수 있으므로 점진적 향상의 훌륭한 예이다. 만약 브라우져에서 캐시를 사용할 수 없을 경우 계속 네트워크 요청을 해야합니다.
+
+getForecastFromCache() 함수를 업데이트 하여 글로벌 window객체에서 캐시 객체를 사용할 수 있는지 확인 하고 캐시가 있으면 캐시에서 데이터를 요청하는 로직을 만들어보자! 
+
+```javascript
+//public/script/app.js의 함수를 수정
+
+function getForecastFromCache(coords) {
+  // CODELAB: Add code to get weather forecast from the caches object.
+  if (!("caches" in window)) {
+    return null;
+  }
+  const url = `${window.location.origin}/forecast/${coords}`;
+  return caches
+    .match(url)
+    .then(response => {
+      if (response) {
+        return response.json();
+      }
+      return null;
+    })
+    .catch(err => {
+      console.error("Error getting data from cache", err);
+      return null;
+    });
+}
+```
+
+
+
+그런다음 updateData() 함수를 수정하여 네트워크에서 가져오기 위해 getForecastFromNetwork()를 호출하고 최신 캐시된 것을 가져오기 위해 getForecastFromCahce()를 호출합니다!
+
+
+
+```javascript
+function updateData() {
+  Object.keys(weatherApp.selectedLocations).forEach(key => {
+    const location = weatherApp.selectedLocations[key];
+    const card = getForecastCard(location);
+    // CODELAB: Add code to call getForecastFromCache.
+    getForecastFromCache(location.geo).then(forecast => {
+      renderForecast(card, forecast);
+    });
+    // Get the forecast data from the network.
+    getForecastFromNetwork(location.geo).then(forecast => {
+      renderForecast(card, forecast);
+    });
+  });
+}
+```
+
+이제 우리의 날씨앱은 캐시와 네트워크 요청으로 두개의 비동기 요청을 수행합니다. 캐시에 데이터가 있으면 반환되어 아주 빠르게 렌더링 되고 그다음에 네트워크에서 응답이 오면 최신 데이터가 업데이트 됩니다!
+
+우리는 어떻게 캐시요청과 fetch요청이 동시에 끝난것을 알 수 있을까요?  어떻게 앱에서 최신데이터를 보여주고 있다고 우리는 알 수 있을까요?   그것은 바로 아래의 renderForecast()함수중 일부에서 알 수 있습니다, 아래의 코드를 확인합니다.
+
+```javascript
+if (lastUpdated >= data.currently.time) {
+    return;
+  }
+```
+
+바로 이 부분입니다. 매번 날씨카드가 업데이트 될 때마다 앱은 숨겨진 곳에 시간 기록(타임 스템프)을 저장해놓는다. 카드에 이미 존재하는 시간 기록이 함수에 전달된 데이터 보다 최신인 경우 앱을 중단합니다!!
+
+
+
+### 우리의 resources들을 캐시에 저장하기
+
+ 캐시들을 미리 저장하기전에 우리는 CACHE_NAME 의 버전을 한단계올려 static-cache-v2로 만들어준뒤 DATA_CACHE_NAME 을 data-cache-v1로 추가해 줍시다!  
+
+DATA_CACHE_NAME 는 앱의 데이터와 앱 쉡과 분리해 줄 수 있는 기능이다. 예를 들어 앱에서 바뀌지 않는 부분을 앱 쉘로 분리하면 앱캐시에서 새로운 정보를 받아와 업데이트하는동안 리미 준비되어있는 앱 쉘이 아주아주 빠르게 렌더링해준다. 
+
+아래와같이 서비스워커의 코드를 수정하자.
+
+```javascript
+const CACHE_NAME = "static-cache-v2";
+const DATA_CACHE_NAME = "data-cache-v1";
+```
+
+또한 우리의 앱이 오프라인으로 구동이 가능할려면 우리의 resource들이 미리 캐싱되어야하는데 이것은 앱이 요청을 네트워크에서 하는 것이 아닌 로컬 캐시에서 모든 리소스를 로드할 수 있기때문에 불안정한 네트워크에서도 가능하다.
+
+ FILES_TO_CACHE의 파일들을 아래와 같이 수정하자
+
+```javascript
+const FILES_TO_CACHE = [
+  "/",
+  "/index.html",
+  "/scripts/app.js",
+  "/scripts/install.js",
+  "/scripts/luxon-1.11.4.js",
+  "/styles/inline.css",
+  "/images/add.svg",
+  "/images/clear-day.svg",
+  "/images/clear-night.svg",
+  "/images/cloudy.svg",
+  "/images/fog.svg",
+  "/images/hail.svg",
+  "/images/install.svg",
+  "/images/partly-cloudy-day.svg",
+  "/images/partly-cloudy-night.svg",
+  "/images/rain.svg",
+  "/images/refresh.svg",
+  "/images/sleet.svg",
+  "/images/snow.svg",
+  "/images/thunderstorm.svg",
+  "/images/tornado.svg",
+  "/images/wind.svg"
+];
+```
+
+
+
+파일들을 하나하나 보면 앱의구동에 필요한 파일들을 모두 가져온 것을 알 수 있고 offline.html이 없어진 점도 볼 수 있다.  즉 우리는 오프라인에서 공룡게임 페이지도 아닌 offline.html도 아닌 기존에 서비스를 그대로 사용할 수 있다.
+
+
+
+### activate 이벤트 및 fetch 이벤트 핸들러 업데이트
+
+activate 이벤트에서 이벤트 핸들러가 실수로 data를 삭제하지 않게 하기 위해서  if (key !== CACHE_NAME)을 아래와 같이 바꿔준다.  CACHE_NAME와 DATA_CACHE_NAME 둘다 같지 않을시에만 삭제 해줌!
+
+```javascript
+if (key !== CACHE_NAME && key !== DATA_CACHE_NAME)
+```
+
+
+
+우리는 날씨 API로 부터 받아온 요청들을 서비스워커가 가로채서 캐시저장소에 저장하여 다음에 쉽게 접근 할 수 있도록 서비스워커의 fetch이벤트 핸들러를 수정해줘야합니다!!  우리의  stale-while-revalidate strategy 에서 우리는 네트워크에 접근 하여 가장 사실에 입각한 가장 최신의 정보를 얻고자 하며 실패시에 미리 캐시해놓은 가장 최근의 데이터를 보여줍니다!
+
+fetch이벤트 핸들러를 아래와 같이 수정해봅시다!
+
+```javascript
+self.addEventListener("fetch", evt => {
+  console.log("[ServiceWorker] Fetch", evt.request.url);
+  // CODELAB: Add fetch event handler here.
+  if (evt.request.url.includes("/forecast/")) {
+    console.log("[Service Worker] Fetch (data)", evt.request.url);
+    evt.respondWith(
+      caches.open(DATA_CACHE_NAME).then(cache => {
+        return fetch(evt.request)
+          .then(response => {
+            // If the response was good, clone it and store it in the cache.
+            if (response.status === 200) {
+              cache.put(evt.request.url, response.clone());
+            }
+            return response;
+          })
+          .catch(err => {
+            // Network request failed, try to get it from the cache.
+            return cache.match(evt.request);
+          });
+      })
+    );
+    return;
+  }
+  evt.respondWith(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(evt.request).then(response => {
+        return response || fetch(evt.request);
+      });
+    })
+  );
+});
+```
+
+ 이 코드는 만약에 일기예보와 관련된 요청이라면 그것을 가로챈뒤 fetch request를 만든다. 응답이 리턴되면 캐시를 열고 응답을 복제해서 캐시에 저장한뒤에 원래 요청했던 곳으로 돌아간다.
+
+우리는  evt.request.mode !== 'navigate ' 해당 코드를 지워하 한다. 왜냐면 우리는 서비스워커가 단순히 navigate가 아닌 모든 request를 처리해 주길 바란다.  만약에 그대로 두면 우리는 HTML파일만 제공될 것이고 나머지는 모두 네트워크에서 요청된다.
+
+### 직접 해봅시다!!
+
+이제 직접 우리가 만든 오프라인 서비스들을 확인해봅시다. 
+
+최신버전의 서비스워커를 설치를 위해 새로고침을 한번 해줍시다! *(혹시 서비스워커가 업데이트가 안됐다면 페이지를 껐다가 킨후 새로고침해주세요)*  그후 새로운 도시들을 추가한뒤 개발자 도구 Application에 Cache Storage를 들어가보면 현재 서비스워커의 static캐시버전과 data캐시버전이 있고 우리가 저장했던 것을 을 확인할 수 있다.
+
+이제 오프라인 모드로 설정후에 새로고침을 해보면 오프라인 이지만 날씨 정보를 확인 할 수 있다!!! 이때 큰 체감을 못느낀다면 개발자도구 Network에서 slow 3G로 설정하고 다른 홈페이지를 들어가 본 뒤 우리의 미리캐시된 페이지를 들어가보면 아주아주 빠르다는 것을 알 수 있다!!
+
+--------------------
+
+## 👉설치가능한 웹 앱으로 만들기
