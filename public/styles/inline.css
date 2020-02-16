@@ -23,7 +23,7 @@
 html,
 body {
   color: #444;
-  font-family: 'Helvetica', 'Verdana', sans-serif;
+  font-family: "Helvetica", "Verdana", sans-serif;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   height: 100%;
@@ -54,9 +54,7 @@ body {
   align-content: center;
   align-items: stretch;
   background: #3f51b5;
-  box-shadow:
-    0 4px 5px 0 rgba(0, 0, 0, 0.14),
-    0 2px 9px 1px rgba(0, 0, 0, 0.12),
+  box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 2px 9px 1px rgba(0, 0, 0, 0.12),
     0 4px 2px -2px rgba(0, 0, 0, 0.2);
   color: #fff;
   display: flex;
@@ -128,7 +126,8 @@ body {
 }
 
 .card-spinner svg circle {
-  animation: line 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite, rotate 1.6s linear infinite;
+  animation: line 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite,
+    rotate 1.6s linear infinite;
   box-sizing: border-box;
   stroke: #3f51b5;
   stroke-width: 3px;
@@ -136,8 +135,12 @@ body {
 }
 
 @keyframes rotate {
-  from { transform: rotate(0); }
-  to { transform: rotate(450deg); }
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(450deg);
+  }
 }
 
 @keyframes line {
@@ -277,9 +280,7 @@ body {
 .dialog {
   background: #fff;
   border-radius: 2px;
-  box-shadow:
-    0 0 14px rgba(0, 0, 0, 0.24),
-    0 14px 28px rgba(0, 0, 0, 0.48);
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.48);
   left: 50%;
   min-width: 280px;
   position: absolute;
@@ -327,9 +328,7 @@ body {
 .weather-card {
   background: #fff;
   border-radius: 2px;
-  box-shadow:
-    0 2px 2px 0 rgba(0, 0, 0, 0.14),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2),
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   margin: 16px;

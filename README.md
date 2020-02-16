@@ -24,9 +24,7 @@
 
 제 깃허브에서 PWA 관련 더 많은 정보를 얻어가세요ㅎ
 
- https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA 
-
-
+ [👉깃허브 바로가기👈](https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA) 
 
 ## 👉Introduction
 
@@ -54,7 +52,7 @@
 
 #### 파일 다운로드 링크
 
-https://github.com/googlecodelabs/your-first-pwapp/archive/master.zip
+[바로 다운로드하기](https://github.com/googlecodelabs/your-first-pwapp/archive/master.zip)
 
 ### VS code에서 시작하기
 
@@ -349,9 +347,9 @@ self.addEventListener("fetch", evt => {
 
 
 
-구글 : https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle
+[구글](https://developers.google.com/web/fundamentals/primers/service-workers/lifecycle)
 
-제가 만든 github PWA저장소 4장 참고 :  https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA 
+[제가 만든 github PWA저장소 4장 참고](https://github.com/sunghye-on/Today-I-Learned/tree/master/PWA)
 
 ### app의 로직을 업데이트
 
@@ -533,3 +531,219 @@ self.addEventListener("fetch", evt => {
 --------------------
 
 ## 👉설치가능한 웹 앱으로 만들기
+
+PWA(Progressive Web App)가 설치되면 설치된 다른 앱처럼 보이고 앱처럼 작동한다. 크롬에서는 PWA를 점3개가 있는 메뉴버튼으로 설치할 수 있고 또한 사용자에게 앱을 설치하라는 UI를 제공할 수 있다. 하지만 크롬에서 메뉴에서 직접 설치하는것은 일반 사용자는 알기 쉽지 않기때문에 설치를 위한 프로세스를 만드는것이 바람직합니다!!!
+
+
+
+### 개발자도구 Audits의 Lighthouse를 이용한 설치가능 확인 
+
+위에서 설명한 등대기능으로 설치가능 여부를 확인 할 수 있다. 우리의 페이지를 보면 3가지의 조건이 모두 만족하는 것을 볼 수 있다. 
+
+### install.js 추가하기
+
+먼저 install.js를 index.html에 추가합니다. 방법은 일반 js 파일을 추가하는 것과 같습니다. 아래의 코드 참고
+
+```html
+<script src="/scripts/install.js"></script>
+```
+
+### beforeinstallprompt 이벤트 
+
+만약 홈화면에 추가할 수 있는 조건들이 만족되면 크롬에서 설치하라는 메시지를 보내기 전에 beforeinstallprompt 이벤트를 발생시킨다.  beforeinstallprompt 이벤트의 추가를 위해 아래의 코드를 public/script/install.js에 추가해봅시다.
+
+```javascript
+window.addEventListener('beforeinstallprompt', saveBeforeInstallPromptEvent);
+```
+
+### Save event와 install 버튼 보이기
+
+saveBeforeInstallPromptEvent 함수에서 beforeinstallprompt 이벤트에 대한 참조를 저장하여 나중에 prompt ()를 호출하고 UI를 업데이트하여 설치 버튼을 표시 할 수 있습니다. 아래의 코드를 추가해보자
+
+```javascript
+function saveBeforeInstallPromptEvent(evt) {
+  // CODELAB: Add code to save event & show the install button.
+  deferredInstallPrompt = evt;
+  installButton.removeAttribute("hidden");
+}
+```
+
+### prompt를 보이고 버튼을 숨기자
+
+사용자가 설치버튼을 누르면 우리는 beforeinstallprompt에 저장된 .prompt()를 호출해야한다. 또한 우리는 .prompt버튼은 한번만 사용할 것이므로 설치버튼을 숨겨야한다. 아래의 코드를 installPWA 함수에 추가하자
+
+```javascript
+function installPWA(evt) {
+  // CODELAB: Add code show install prompt & hide the install button.
+  deferredInstallPrompt.prompt();
+  evt.srcElement.setAttribute("hidden", true);
+}
+```
+
+ .prompt() 를 호출하면 사용자에게 모달의 대화상자가 표시되며 앱을 홈화면에 추가하도록 요청합니다.
+
+
+
+### 사용자의 설치여부 기록
+
+우리는 저장된 beforeinstallprompt이벤트의 프로미스를 통해 반환된 **userChoice** 속성으로 사용자가 설치하라는 모달창에서 어떤 대답을 했을 지 알 수 있다. 이 프로미스는 outcome이라는 속성을 반환하는데 이것은 사용자가 어떤 반응을 했을지 알 수 있는 속성이다. 아래의 코드를 이용하여 installPWA함수를 수정하자
+
+```javascript
+function installPWA(evt) {
+  // CODELAB: Add code show install prompt & hide the install button.
+  deferredInstallPrompt.prompt();
+  // Hide the install button, it can't be called twice.
+  evt.srcElement.setAttribute("hidden", true);
+  // CODELAB: Log user response to prompt.
+  deferredInstallPrompt.userChoice.then(choice => {
+    if (choice.outcome === "accepted") {
+      console.log("User accepted the A2HS prompt", choice);
+    } else {
+      console.log("User dismissed the A2HS prompt", choice);
+    }
+    deferredInstallPrompt = null;
+  });
+}
+```
+
+이때 userChoice는 함수가 아닌 [여기](https://w3c.github.io/manifest/#beforeinstallpromptevent-interface) 이곳에 정의 되어 있는 속성이다.
+
+### 모든 설치이벤트 기록하기
+
+만약에 사용자가 점3개 메뉴에서 직접 설치하는것 처럼 다른 방법으로 설치할 때도 해당 이벤트를 추적해서 기록할 수 있다.  아래의 코드를 추가하자
+
+```javascript
+window.addEventListener('appinstalled', logAppInstalled);
+```
+
+자 이제 logAppInstalled 함수를 수정해보자 여기서는 단순히 console.log만을 적겠지만 실제 제공되는 앱에서는 아마 제공하는 서비스마다 분석을 위한 다른 기록을 원할 것이다. 우리는 아래와 같이 console.log를 찍어보자
+
+```javascript
+function logAppInstalled(evt) {
+  // CODELAB: Add code to log the event
+  console.log("Weather App was installed.", evt);
+}
+```
+
+
+
+### 서비스워커 업데이트
+
+우리는 이미 캐시된 파일을 변경했으니까 CACHE_NAME을 엡데이트하여 버전업된 캐시파일을 엡데이트 해야합니다. 개방자 도구에서  **Bypass for network**를 선택할 수 있지만 이것은 개발 용이지 실제 앱에는 영향을 주지 않는다.
+
+
+
+### 자, 이제 해봅시다
+
+설치단계가 어떻게 진행되는지 봅시다! 우선 안전을 위해 Application에세 데이터를 한번 지우고 새로 시작합시다.
+
+**먼저 상단 네브바에서 설치아이콘이 잘 표시되는지 확인해봅시다.**
+
+1. 우리의URL(여기서는 localhost)을 열어줍니다. 
+2. 크롬의 주소창 옆에 점3개 메뉴를 열어줍니다.
+   * Weather설치.. 를 찾을 수 있을겁니다!
+3. 새로고침을 하여 날씨데이터를 새로고침해주고 우측상단의 설치가능한 아이콘이 생긴 것을 확인 할 수 있을 것입니다!!
+
+**다음으로 install 버튼이 정상적으로 작동하는지 확인해봅시다.**
+
+우리는 모든 설치가 올바르게 작동하고 있는 지 테스트 가능하고 데스크탑이나 모바일로 이 작업을 수행할 수 있다. 모바일에서 이것을 테스트하려면 원격 디버깅을 사용하고 있는지 확인하여 콘솔에 기록 된 내용을 볼 수 있습니다.
+
+1. 크롬을 연 뒤에 우리의 날씨PWA로 들어갑니다.
+2. 개발자 도구를 열어서 Console로 이동합니다.
+3. 우측상단에 설치버튼을 클릭합니다. 
+   * 설치버튼이 사라지는 것을 볼 수 있습니다!
+   * 설치하겠냐는 모달이 나옵니다!
+4. 취소를 눌러봅니다.
+   *  "*User dismissed the A2HS prompt*" 가 console에 보일것입니다.
+     * 이때 {outcome: "dismissed", platform: ""}
+   * 설치 아이콘이 다시 보여집니다.
+5. 다시 설치아이콘을 누르고 이번에는 설치버튼을 누릅니다.
+   *  "*User accepted the A2HS prompt*" 가 console에 보일것 입니다.
+     * 이때 {outcome: "accepted", platform: "web"}
+   *  "*Weather App was installed*" 가 console에 보일것입니다. 
+   * 우리의 날씨앱이 일반적으로 찾을 수 있는 곳에 있는지 확인 합니다. 
+     * EX) 데스크탑의 바탕화면 , 모바일의 메뉴 또는 바탕화면
+6.  날씨 PWA 설치 완료확인!
+   * 앱이 데스크톱의 앱 창 또는 모바일의 전체 화면에서 독립형 앱으로 열리는 지 확인합니다.
+
+
+
+NOTE : localhost의 데스크톱에서 실행중인 경우 localhost는 보안 호스트로 간주되지 않으므로 설치된 PWA에 주소 배너가 표시 될 수 있습니다.
+
+### iOS에서 설치가 제대로 작동되는지 확인하기
+
+**저는 iOS를 쓰지 않아서 정확한 정보를 드릴 수 없어서 해당내용을 번역만 해서 드리겠습니다...**
+
+iOS에서의 동작을 확인합시다. iOS 기기가있는 경우 해당 기기를 사용하거나 Mac을 사용하는 경우 Xcode와 함께 제공되는 iOS 시뮬레이터를 사용해보십시오.
+
+1. 사파리 브라우저에서 날씨PWA로 들어갑니다.
+2. Share 버튼을 클릭합니다.
+3. 오른쪽으로 스크롤하여 홈 화면에 추가 버튼을 클릭하십시오.
+   * 타이틀, URL, 아이콘이 맞는지 확인하세요
+4. Add를 클릭합니다.
+   * 앱의 아이콘이 화면에 추가될 것입니다.
+5. 날씨 PWA 를 홈화면에서 실행 시켜봅시다.
+   * 앱이 fullscreen으로 실행될 것 입니다.
+
+
+
+### 보너스 정보
+
+#### 홈화면에서 앱이 실행되는것을 감지하기
+
+미디어 쿼리를 사용하여 display-mode 로 앱시작 방법에 따라 다른 스타일을 적용하거나 javascript를 이용해서 스타일을 적용할 수 있다. 아래의 코드를 참고하자
+
+```css
+/* css */
+@media all and (display-mode: standalone) {
+  body {
+    background-color: yellow;
+  }
+}
+```
+
+```javascript
+/* javascript */
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  console.log('display-mode is standalone');
+}
+```
+
+사파리에서 확인하기
+
+```javascript
+/* javascript - 사파리 */
+if (window.navigator.standalone === true) {
+  console.log('display-mode is standalone');
+}
+```
+
+ 
+
+#### 설치삭제(Uninstall)하기
+
+앱이 이미 설치되어 있으면 beforeinstallevent가 시작되지 않으므로 개발 중에 앱이 여러 번 설치 및 제거되어 모든 것이 예상대로 작동하는지 확인해야합니다.
+
+
+
+##### 안드로이드
+
+1. 앱서랍에서 날씨앱을 찾습니다.
+2. 아이콘을 선택한뒤
+3. 삭제를 누릅니다.
+4. 읭 너무간단...
+
+##### 크롬
+
+1. 설치한 날씨앱에 들어갑니다.
+2. 점3개 옵션에서 제거를 누릅니다.
+3. 삭제됩니다.
+4. 읭 너무 간단행
+
+##### 맥os와 윈도우
+
+1. 새로운 탭을 열고 *chrome://apps*. 에 들어갑니다.
+2. 날씨PWA를 찾아서 
+3. 지웁니다
+4. 읭 너무 쉽넹 
+5. 같은 방법으로 크롬에서도 지울 수 있습니다.
