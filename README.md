@@ -747,3 +747,26 @@ if (window.navigator.standalone === true) {
 3. 지웁니다
 4. 읭 너무 쉽넹 
 5. 같은 방법으로 크롬에서도 지울 수 있습니다.
+
+
+
+
+
+## 👉PWA 완료!!!!
+
+### 축하드립니다!!
+
+우리는 간단한 PWA 앱을 성공적으로 만들었습니다.!!
+
+웹 앱 매니페스트를 추가하여 설치할 수 있도록하고 PWA가 항상 빠르고 안정적이되도록 서비스 워커를 추가했습니다. DevTools를 사용하여 앱을 감사하고 사용자 경험을 향상시키는 데 도움이되는 방법을 배웠습니다.
+
+
+
+앞으로 우리는 progressive답게 점진적으로 발전해야합니다. 
+
+[웹푸시 노티피케이션](https://codelabs.developers.google.com/codelabs/push-notifications/index.html#0)을 추가하거나 [높은 퍼포먼스를 내는 서비스워커](https://developers.google.com/web/fundamentals/primers/service-workers/high-performance-loading) 를설계하는 등  할것이 많습니다. 
+
+
+
+앞으로도 더 많은 발전이 있길 빕니다
+
